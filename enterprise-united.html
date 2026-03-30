@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Enterprise United — Topic Capture</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f5f5f3;color:#1a1a18;min-height:100vh}
+#app{max-width:860px;margin:0 auto;padding:1.5rem 1rem 3rem}
+button,input,select,textarea{font-family:inherit}
+button{cursor:pointer}
+.banner{padding:10px 16px;border-radius:8px;font-size:13px;margin-bottom:12px}
+.bg-green{background:#E1F5EE;border:0.5px solid #5DCAA5;color:#085041}
+.bg-red{background:#FCEBEB;border:0.5px solid #F09595;color:#A32D2D}
+.card{background:#fff;border:0.5px solid rgba(0,0,0,0.12);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.inp{width:100%;padding:8px 10px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.2);font-size:14px;background:#fff;color:#1a1a18}
+.inp-p{width:100%;padding:8px 10px;border-radius:8px;border:0.5px solid #AFA9EC;font-size:14px;background:#fff;color:#1a1a18}
+.btn{padding:7px 16px;border-radius:8px;font-size:13px;border:0.5px solid rgba(0,0,0,0.15);background:transparent;color:#444}
+.btn:hover{background:#f0f0ee}
+.btn-purple{background:#7F77DD;color:#fff;border:none;font-weight:500}
+.btn-purple:hover{background:#6d65cc}
+.btn-blue{background:#378ADD;color:#fff;border:none}
+.btn-red{background:#E24B4A;color:#fff;border:none;font-weight:500}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:12px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{background:#EEEDFE;border-radius:12px;padding:1.5rem;width:100%;border:1px solid #AFA9EC;max-height:90vh;overflow-y:auto}
+.modal-red{background:#FCEBEB;border-color:#F09595}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.stat{background:#f0f0ee;border-radius:8px;padding:12px 14px}
+.stat .lbl{font-size:11px;color:#666;margin-bottom:4px}
+.stat .val{font-size:22px;font-weight:500}
+.vote-box{min-width:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;padding:8px 6px;border:1px solid rgba(0,0,0,0.12);flex-shrink:0;background:#f0f0ee}
+.vote-box.hot{background:#EEEDFE;border-color:#AFA9EC}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:10px 14px;text-align:left;font-weight:500;color:#666;white-space:nowrap;background:#f5f5f3;border-bottom:0.5px solid rgba(0,0,0,0.1)}
+td{padding:10px 14px;border-bottom:0.5px solid rgba(0,0,0,0.08);vertical-align:middle}
+tr:nth-child(even) td{background:#fafafa}
+.lock{max-width:340px;margin:3rem auto;background:#EEEDFE;border:1px solid #AFA9EC;border-radius:12px;padding:2rem;text-align:center}
+.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hidden{display:none}
+input[type=password]{letter-spacing:0.15em;text-align:center}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- BANNER -->
+  <div id="banner" class="banner hidden"></div>
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px">
+    <div>
+      <div style="font-size:18px;font-weight:500">Enterprise United — Topic capture</div>
+      <div style="font-size:13px;color:#666;margin-top:2px;display:flex;align-items:center;gap:6px">
+        Enterprise customer success · Klaviyo &nbsp;
+        <span id="sync-dot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#BA7517;vertical-align:middle"></span>
+        <span id="sync-label" style="font-size:11px;color:#888">Connecting…</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="showView('board')">Board</button>
+      <button class="btn" id="pm-btn" onclick="pmClick()">PM / Admin 🔒</button>
+      <button class="btn" onclick="showModal('export-modal')">↓ Export</button>
+      <button class="btn btn-purple" onclick="showView('submit')">+ Submit request</button>
+    </div>
+  </div>
+
+  <!-- VIEWS -->
+  <div id="view-board"></div>
+  <div id="view-submit" class="hidden">
+    <div class="card">
+      <div style="font-size:16px;font-weight:500;margin-bottom:1rem">New request</div>
+      <div style="margin-bottom:12px"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Title *</label><input class="inp" id="f-title" placeholder="Short, descriptive title"></div>
+      <div class="g2" style="margin-bottom:12px">
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Category *</label><select class="inp" id="f-cat"></select></div>
+        <div><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Your name (CSM) *</label><input class="inp" id="f-csm" placeholder="e.g. Sarah K."></div>
+      </div>
+      <div style="margin-bottom:12px"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Affected customers (comma separated)</label><input class="inp" id="f-customers" placeholder="Acme Corp, Globex Inc"></div>
+      <div style="margin-bottom:16px"><label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Description</label><textarea class="inp" id="f-desc" rows="4" style="resize:vertical" placeholder="Describe the request and why it matters…"></textarea></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-purple" id="submit-btn" onclick="submitRequest()">Submit request</button>
+        <button class="btn" onclick="showView('board')">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <div id="view-pmlock" class="hidden">
+    <div class="lock">
+      <div style="font-size:32px;margin-bottom:12px">🔒</div>
+      <div style="font-size:16px;font-weight:500;color:#3C3489;margin-bottom:6px">PM / Admin view</div>
+      <div style="font-size:13px;color:#534AB7;margin-bottom:20px">Enter the passcode to continue.</div>
+      <input class="inp-p" type="password" id="pass-input" placeholder="Passcode" style="margin-bottom:8px" onkeydown="if(event.key==='Enter')tryUnlock()">
+      <div id="pass-error" class="hidden" style="font-size:12px;color:#A32D2D;margin-bottom:8px">Incorrect passcode. Try again.</div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn btn-purple" onclick="tryUnlock()">Unlock</button>
+        <button class="btn" style="border-color:#AFA9EC;color:#534AB7" onclick="showView('board')">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <div id="view-pm" class="hidden"></div>
+
+  <!-- MODALS -->
+  <div id="edit-modal" class="overlay hidden" onclick="if(event.target===this)hideModal('edit-modal')">
+    <div class="modal" style="max-width:500px" onclick="event.stopPropagation()">
+      <div style="font-size:15px;font-weight:500;margin-bottom:1rem;color:#3C3489">Edit request</div>
+      <div style="margin-bottom:12px"><label style="font-size:12px;color:#534AB7;display:block;margin-bottom:4px">Title</label><input class="inp-p" id="e-title"></div>
+      <div id="e-cat-status-row" style="margin-bottom:12px"></div>
+      <div style="margin-bottom:12px"><label style="font-size:12px;color:#534AB7;display:block;margin-bottom:4px">Submitted by</label><div id="e-submitted" style="padding:8px 10px;border-radius:8px;border:0.5px solid #AFA9EC;background:#D8D5F5;color:#534AB7;font-size:14px"></div></div>
+      <div style="margin-bottom:12px"><label style="font-size:12px;color:#534AB7;display:block;margin-bottom:4px">Description</label><textarea class="inp-p" id="e-desc" rows="3" style="resize:vertical"></textarea></div>
+      <div style="margin-bottom:12px"><label style="font-size:12px;color:#534AB7;display:block;margin-bottom:4px">CSM votes</label><div id="e-votes-chips" style="display:flex;gap:4px;flex-wrap:wrap"></div></div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;color:#534AB7;display:block;margin-bottom:4px">Affected customers</label>
+        <div id="e-cust-chips" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px"></div>
+        <input class="inp-p" id="e-new-customers" placeholder="Add more customers, e.g. Acme Corp, Globex Inc" style="font-size:13px">
+        <div style="font-size:11px;color:#7F77DD;margin-top:4px">Separate with commas. Click × to remove.</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-purple" onclick="submitEdit()">Save changes</button>
+        <button class="btn" style="border-color:#AFA9EC;color:#534AB7" onclick="hideModal('edit-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="delete-modal" class="overlay hidden" onclick="if(event.target===this)hideModal('delete-modal')">
+    <div class="modal modal-red" style="max-width:400px" onclick="event.stopPropagation()">
+      <div style="font-size:15px;font-weight:500;margin-bottom:8px;color:#791F1F">Delete request?</div>
+      <p id="delete-msg" style="font-size:13px;color:#A32D2D;margin-bottom:1.25rem;line-height:1.6"></p>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-red" onclick="confirmDelete()">Delete</button>
+        <button class="btn" style="border-color:#F09595;color:#A32D2D" onclick="hideModal('delete-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="comment-modal" class="overlay hidden" onclick="if(event.target===this)hideModal('comment-modal')">
+    <div class="modal" style="max-width:420px" onclick="event.stopPropagation()">
+      <div style="font-size:15px;font-weight:500;margin-bottom:4px;color:#3C3489">Add a comment</div>
+      <div id="comment-title" style="font-size:13px;color:#534AB7;margin-bottom:1rem"></div>
+      <div style="margin-bottom:12px"><label style="font-size:12px;color:#534AB7;display:block;margin-bottom:4px">Your name *</label><input class="inp-p" id="c-author" placeholder="e.g. Sarah K."></div>
+      <div style="margin-bottom:1rem"><label style="font-size:12px;color:#534AB7;display:block;margin-bottom:4px">Comment *</label><textarea class="inp-p" id="c-text" rows="3" style="resize:vertical"></textarea></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-purple" onclick="submitComment()">Post comment</button>
+        <button class="btn" style="border-color:#AFA9EC;color:#534AB7" onclick="hideModal('comment-modal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="export-modal" class="overlay hidden" onclick="if(event.target===this)hideModal('export-modal')">
+    <div class="modal" style="max-width:620px;display:flex;flex-direction:column;max-height:80vh" onclick="event.stopPropagation()">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:15px;font-weight:500;color:#3C3489">Export data</div>
+        <button class="btn" style="border-color:#AFA9EC;color:#534AB7" onclick="hideModal('export-modal')">✕ Close</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button id="tsv-btn" class="btn btn-purple" style="border-radius:20px;font-size:12px;padding:4px 12px" onclick="setExportMode('tsv')">Tab-separated (paste to Sheets)</button>
+        <button id="csv-btn" class="btn" style="border-radius:20px;font-size:12px;padding:4px 12px;border-color:#AFA9EC;color:#534AB7" onclick="setExportMode('csv')">CSV (comma-separated)</button>
+      </div>
+      <div id="export-hint" style="font-size:12px;color:#534AB7;margin-bottom:8px"></div>
+      <textarea id="export-ta" readonly rows="14" style="width:100%;font-family:monospace;font-size:11px;padding:8px 10px;border-radius:8px;border:0.5px solid #AFA9EC;background:#fff;color:#3C3489;resize:none;line-height:1.5;flex:1"></textarea>
+      <button class="btn btn-purple" style="margin-top:10px" onclick="copyExport()">Select all &amp; copy</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbyaQ9-gq6H-IiZMdZ4lDxmqcPU98uMc5vojTkrrkGVzL4eERCY8vEI2fFNOZhAZ-4BIKg/exec";
+const ADMIN_PASS = "United";
+
+const CATEGORIES = [
+  {id:"product",label:"Product",color:"#7F77DD",bg:"#EEEDFE",text:"#3C3489"},
+  {id:"process",label:"Process",color:"#1D9E75",bg:"#E1F5EE",text:"#085041"},
+  {id:"teaming",label:"Teaming",color:"#378ADD",bg:"#E6F1FB",text:"#0C447C"},
+  {id:"admin_billing",label:"Admin / billing / contracts",color:"#BA7517",bg:"#FAEEDA",text:"#633806"},
+];
+const STATUSES = [
+  {id:"new",label:"New",color:"#378ADD",bg:"#E6F1FB",text:"#0C447C"},
+  {id:"active",label:"Open",color:"#BA7517",bg:"#FAEEDA",text:"#633806"},
+  {id:"closed_won",label:"Closed Won",color:"#1D9E75",bg:"#E1F5EE",text:"#085041"},
+  {id:"closed_lost",label:"Closed Lost",color:"#E24B4A",bg:"#FCEBEB",text:"#791F1F"},
+];
+
+const cat = id => CATEGORIES.find(c=>c.id===id)||CATEGORIES[0];
+const statusObj = id => STATUSES.find(s=>s.id===id)||STATUSES[0];
+const totalVotes = r => (r.csmVotes||[]).length;
+const impactScore = r => totalVotes(r)*Math.max((r.customers||[]).length,1);
+
+let requests = [];
+let adminUnlocked = false;
+let expanded = null;
+let editTarget = null;
+let deleteTarget = null;
+let commentTarget = null;
+let currentView = "board";
+let exportMode = "tsv";
+let bannerTimer = null;
+
+// ── API ───────────────────────────────────────────────────
+function apiCall(params) {
+  return new Promise((resolve,reject) => {
+    const cb = "_cb_"+Date.now()+"_"+Math.floor(Math.random()*99999);
+    const url = new URL(API);
+    Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,typeof v==="object"?JSON.stringify(v):String(v)));
+    url.searchParams.set("callback",cb);
+    const script = document.createElement("script");
+    const timer = setTimeout(()=>{cleanup();reject(new Error("Timeout"));},15000);
+    function cleanup(){clearTimeout(timer);delete window[cb];if(script.parentNode)script.parentNode.removeChild(script);}
+    window[cb] = data=>{cleanup();resolve(data);};
+    script.onerror = ()=>{cleanup();reject(new Error("Network error"));};
+    script.src = url.toString();
+    document.head.appendChild(script);
+  });
+}
+
+function setSyncStatus(status) {
+  const dot = document.getElementById("sync-dot");
+  const lbl = document.getElementById("sync-label");
+  if (!dot||!lbl) return;
+  const map = {connecting:["#BA7517","Connecting…"],ok:["#1D9E75","Synced to Google Sheet"],saving:["#BA7517","Saving…"],error:["#E24B4A","Connection error"]};
+  const [color,text] = map[status]||map.ok;
+  dot.style.background = color; lbl.textContent = text;
+}
+
+async function loadAll() {
+  setSyncStatus("connecting");
+  try {
+    const res = await apiCall({action:"getAll"});
+    if (res.ok) {
+      requests = (res.data||[]).map(r=>(!r.csmVotes&&r.votes)?{...r,csmVotes:r.votes.map(v=>v.csm),customers:[...new Set(r.votes.flatMap(v=>v.customers||[]))]}:r);
+      setSyncStatus("ok");
+      renderBoard();
+    } else { setSyncStatus("error"); flash("Could not load from sheet: "+(res.error||"unknown"),"red"); }
+  } catch(e) { setSyncStatus("error"); flash("Connection error: "+e.message,"red"); }
+}
+
+async function saveRow(row) {
+  setSyncStatus("saving");
+  try { await apiCall({action:"save",payload:row}); setSyncStatus("ok"); }
+  catch(e) { setSyncStatus("error"); flash("Save failed: "+e.message,"red"); }
+}
+
+async function deleteRow(id) {
+  try { await apiCall({action:"delete",id}); } catch {}
+}
+
+// ── UI HELPERS ────────────────────────────────────────────
+function flash(msg, type="green") {
+  const el = document.getElementById("banner");
+  el.textContent = msg;
+  el.className = "banner bg-"+type;
+  el.classList.remove("hidden");
+  if (bannerTimer) clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(()=>el.classList.add("hidden"), 3500);
+}
+
+function showView(v) {
+  currentView = v;
+  ["board","submit","pmlock","pm"].forEach(id=>{
+    const el = document.getElementById("view-"+id);
+    if (el) el.classList.toggle("hidden", id!==v);
+  });
+}
+
+function showModal(id) { document.getElementById(id).classList.remove("hidden"); }
+function hideModal(id) { document.getElementById(id).classList.add("hidden"); }
+
+function pill(label, bg, color) {
+  const s = document.createElement("span");
+  s.className = "pill"; s.textContent = label;
+  s.style.background = bg; s.style.color = color;
+  return s;
+}
+
+function pmClick() {
+  if (adminUnlocked) showView("pm");
+  else showView("pmlock");
+}
+
+function tryUnlock() {
+  const val = document.getElementById("pass-input").value;
+  if (val===ADMIN_PASS) {
+    adminUnlocked = true;
+    document.getElementById("pm-btn").textContent = "PM / Admin 🔓";
+    document.getElementById("pass-input").value = "";
+    document.getElementById("pass-error").classList.add("hidden");
+    showView("pm");
+    renderPM();
+  } else {
+    document.getElementById("pass-error").classList.remove("hidden");
+  }
+}
+
+// ── SUBMIT ────────────────────────────────────────────────
+function initSubmitForm() {
+  const sel = document.getElementById("f-cat");
+  sel.innerHTML = "";
+  CATEGORIES.forEach(c=>{ const o=document.createElement("option"); o.value=c.id; o.textContent=c.label; sel.appendChild(o); });
+}
+
+function submitRequest() {
+  const title = document.getElementById("f-title").value.trim();
+  const csm = document.getElementById("f-csm").value.trim();
+  if (!title||!csm) { flash("Please fill in Title and your name.","red"); return; }
+  const r = {
+    id:"req_"+Date.now(), title,
+    category: document.getElementById("f-cat").value,
+    status:"new",
+    description: document.getElementById("f-desc").value.trim(),
+    submittedBy: csm,
+    csmVotes:[csm],
+    customers: document.getElementById("f-customers").value.split(",").map(s=>s.trim()).filter(Boolean),
+    createdAt: new Date().toISOString().split("T")[0],
+    comments:[]
+  };
+  requests.unshift(r);
+  const btn = document.getElementById("submit-btn");
+  btn.textContent = "✓ Submitted!";
+  btn.disabled = true;
+  saveRow(r);
+  setTimeout(()=>{
+    btn.textContent="Submit request"; btn.disabled=false;
+    document.getElementById("f-title").value="";
+    document.getElementById("f-csm").value="";
+    document.getElementById("f-customers").value="";
+    document.getElementById("f-desc").value="";
+    showView("board"); renderBoard();
+  },1500);
+}
+
+// ── VOTE / CUSTOMER ───────────────────────────────────────
+function addVote(reqId) {
+  const inp = document.getElementById("vote-inp-"+reqId);
+  const n = inp.value.trim(); if (!n) return;
+  const r = requests.find(x=>x.id===reqId); if (!r) return;
+  if ((r.csmVotes||[]).map(v=>v.toLowerCase()).includes(n.toLowerCase())) { flash("Already voted on this request.","red"); return; }
+  r.csmVotes = [...(r.csmVotes||[]),n];
+  inp.value = "";
+  saveRow(r);
+  renderBoard();
+}
+
+function addCustomer(reqId) {
+  const inp = document.getElementById("cust-inp-"+reqId);
+  const n = inp.value.trim(); if (!n) return;
+  const r = requests.find(x=>x.id===reqId); if (!r) return;
+  if ((r.customers||[]).map(c=>c.toLowerCase()).includes(n.toLowerCase())) return;
+  r.customers = [...(r.customers||[]),n];
+  inp.value = "";
+  saveRow(r);
+  renderBoard();
+}
+
+// ── EDIT ──────────────────────────────────────────────────
+function openEdit(reqId) {
+  editTarget = requests.find(r=>r.id===reqId); if (!editTarget) return;
+  document.getElementById("e-title").value = editTarget.title||"";
+  document.getElementById("e-desc").value = editTarget.description||"";
+  document.getElementById("e-submitted").textContent = editTarget.submittedBy||"";
+  document.getElementById("e-new-customers").value = "";
+
+  // cat/status row
+  const row = document.getElementById("e-cat-status-row");
+  row.innerHTML = "";
+  const grid = document.createElement("div");
+  grid.className = adminUnlocked?"g2":"";
+  // category
+  const catDiv = document.createElement("div");
+  const catLbl = document.createElement("label"); catLbl.style.cssText="font-size:12px;color:#534AB7;display:block;margin-bottom:4px"; catLbl.textContent="Category";
+  const catSel = document.createElement("select"); catSel.className="inp-p"; catSel.id="e-cat";
+  CATEGORIES.forEach(c=>{ const o=document.createElement("option"); o.value=c.id; o.textContent=c.label; if(c.id===editTarget.category)o.selected=true; catSel.appendChild(o); });
+  catDiv.appendChild(catLbl); catDiv.appendChild(catSel); grid.appendChild(catDiv);
+  // status (admin only)
+  if (adminUnlocked) {
+    const stDiv = document.createElement("div");
+    const stLbl = document.createElement("label"); stLbl.style.cssText="font-size:12px;color:#534AB7;display:block;margin-bottom:4px"; stLbl.textContent="Status";
+    const stSel = document.createElement("select"); stSel.className="inp-p"; stSel.id="e-status";
+    STATUSES.forEach(s=>{ const o=document.createElement("option"); o.value=s.id; o.textContent=s.label; if(s.id===editTarget.status)o.selected=true; stSel.appendChild(o); });
+    stDiv.appendChild(stLbl); stDiv.appendChild(stSel); grid.appendChild(stDiv);
+  }
+  row.appendChild(grid);
+
+  // vote chips
+  const vc = document.getElementById("e-votes-chips"); vc.innerHTML="";
+  (editTarget.csmVotes||[]).forEach(v=>{ const chip=makeChip(v,"#fff","#3C3489","#AFA9EC","#7F77DD",()=>{ editTarget.csmVotes=(editTarget.csmVotes||[]).filter(x=>x!==v); openEdit(reqId); }); vc.appendChild(chip); });
+  if(!(editTarget.csmVotes||[]).length){ const s=document.createElement("span"); s.style.cssText="font-size:12px;color:#888"; s.textContent="No votes yet."; vc.appendChild(s); }
+
+  // customer chips
+  const cc = document.getElementById("e-cust-chips"); cc.innerHTML="";
+  (editTarget.customers||[]).forEach(cu=>{ const chip=makeChip(cu,"#E6F1FB","#0C447C","#B5D4F4","#378ADD",()=>{ editTarget.customers=(editTarget.customers||[]).filter(c=>c!==cu); openEdit(reqId); }); cc.appendChild(chip); });
+
+  showModal("edit-modal");
+}
+
+function makeChip(text,bg,color,border,xColor,onRemove) {
+  const s = document.createElement("span");
+  s.className="chip"; s.style.background=bg; s.style.color=color; s.style.border="0.5px solid "+border;
+  s.appendChild(document.createTextNode(text));
+  const x = document.createElement("span");
+  x.style.cssText="cursor:pointer;font-size:13px;font-weight:500;line-height:1;color:"+xColor;
+  x.textContent="×"; x.onclick=onRemove; s.appendChild(x);
+  return s;
+}
+
+function submitEdit() {
+  if (!editTarget) return;
+  const title = document.getElementById("e-title").value.trim(); if (!title) return;
+  const added = document.getElementById("e-new-customers").value.split(",").map(s=>s.trim()).filter(Boolean);
+  const merged = [...new Set([...(editTarget.customers||[]),...added])];
+  const catSel = document.getElementById("e-cat");
+  const stSel = document.getElementById("e-status");
+  editTarget.title = title;
+  editTarget.category = catSel?catSel.value:editTarget.category;
+  editTarget.status = stSel?stSel.value:editTarget.status;
+  editTarget.description = document.getElementById("e-desc").value;
+  editTarget.customers = merged;
+  saveRow(editTarget);
+  hideModal("edit-modal");
+  renderBoard();
+  if (currentView==="pm") renderPM();
+}
+
+// ── DELETE ────────────────────────────────────────────────
+function openDelete(reqId) {
+  deleteTarget = requests.find(r=>r.id===reqId); if (!deleteTarget) return;
+  document.getElementById("delete-msg").textContent = 'This will permanently remove "'+deleteTarget.title+'" including all votes and comments.';
+  showModal("delete-modal");
+}
+
+function confirmDelete() {
+  if (!deleteTarget) return;
+  requests = requests.filter(r=>r.id!==deleteTarget.id);
+  if (expanded===deleteTarget.id) expanded=null;
+  deleteRow(deleteTarget.id);
+  deleteTarget=null;
+  hideModal("delete-modal");
+  renderBoard();
+  if (currentView==="pm") renderPM();
+}
+
+// ── COMMENT ───────────────────────────────────────────────
+function openComment(reqId) {
+  commentTarget = requests.find(r=>r.id===reqId); if (!commentTarget) return;
+  document.getElementById("comment-title").textContent = '"'+commentTarget.title+'"';
+  document.getElementById("c-author").value="";
+  document.getElementById("c-text").value="";
+  showModal("comment-modal");
+}
+
+function submitComment() {
+  const author=document.getElementById("c-author").value.trim();
+  const text=document.getElementById("c-text").value.trim();
+  if (!author||!text||!commentTarget) return;
+  commentTarget.comments = [...(commentTarget.comments||[]),{author,text,date:new Date().toISOString().split("T")[0]}];
+  saveRow(commentTarget);
+  hideModal("comment-modal");
+  renderBoard();
+}
+
+function deleteComment(reqId,idx) {
+  const r=requests.find(x=>x.id===reqId); if (!r) return;
+  r.comments=(r.comments||[]).filter((_,i)=>i!==idx);
+  saveRow(r); renderBoard();
+}
+
+// ── EXPORT ────────────────────────────────────────────────
+function setExportMode(mode) {
+  exportMode=mode;
+  document.getElementById("tsv-btn").className="btn "+(mode==="tsv"?"btn-purple":"btn");
+  document.getElementById("tsv-btn").style.cssText=mode==="tsv"?"border-radius:20px;font-size:12px;padding:4px 12px":"border-radius:20px;font-size:12px;padding:4px 12px;border-color:#AFA9EC;color:#534AB7";
+  document.getElementById("csv-btn").className="btn "+(mode==="csv"?"btn-purple":"btn");
+  document.getElementById("csv-btn").style.cssText=mode==="csv"?"border-radius:20px;font-size:12px;padding:4px 12px":"border-radius:20px;font-size:12px;padding:4px 12px;border-color:#AFA9EC;color:#534AB7";
+  const hint=document.getElementById("export-hint");
+  hint.textContent=mode==="tsv"?"Click 'Select all & copy', then paste directly into Google Sheets.":"Click 'Select all & copy', then use File → Import in Google Sheets.";
+  const rows=[["ID","Title","Category","Status","Submitted By","Date","CSM Votes","CSMs","Customers","Total Customers","Description"]];
+  requests.forEach(r=>rows.push([r.id,r.title,cat(r.category).label,statusObj(r.status).label,r.submittedBy,r.createdAt,totalVotes(r),(r.csmVotes||[]).join("; "),(r.customers||[]).join("; "),(r.customers||[]).length,r.description]));
+  document.getElementById("export-ta").value=mode==="tsv"?rows.map(r=>r.map(c=>String(c||"").replace(/\t/g," ")).join("\t")).join("\n"):rows.map(r=>r.map(c=>`"${String(c||"").replace(/"/g,'""')}"`).join(",")).join("\n");
+}
+
+function copyExport() {
+  const ta=document.getElementById("export-ta"); ta.focus(); ta.select(); document.execCommand("copy");
+  flash("✓ Copied — paste into Google Sheets!"); hideModal("export-modal");
+}
+
+// ── RENDER BOARD ──────────────────────────────────────────
+function renderBoard() {
+  const el=document.getElementById("view-board"); el.innerHTML="";
+
+  // Stats
+  const statsEl=document.createElement("div"); statsEl.className="g5"; statsEl.style.marginBottom="1.25rem";
+  [["Total requests",requests.length],["New",requests.filter(r=>r.status==="new").length],["Open",requests.filter(r=>r.status==="active").length],["Closed Won",requests.filter(r=>r.status==="closed_won").length],["Closed Lost",requests.filter(r=>r.status==="closed_lost").length]]
+    .forEach(([l,v])=>{ const d=document.createElement("div"); d.className="stat"; d.innerHTML=`<div class="lbl">${l}</div><div class="val">${v}</div>`; statsEl.appendChild(d); });
+  el.appendChild(statsEl);
+
+  // Filters
+  const catFilter=document.createElement("div"); catFilter.style.cssText="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center";
+  const catLbl=document.createElement("span"); catLbl.style.cssText="font-size:12px;color:#666"; catLbl.textContent="Category:"; catFilter.appendChild(catLbl);
+  [{id:"all",label:"All",color:"#333",bg:"#eee",text:"#333"},...CATEGORIES].forEach(c=>{
+    const btn=document.createElement("button"); btn.className="btn"; btn.textContent=c.label||"All";
+    btn.style.cssText=`padding:4px 10px;border-radius:20px;font-size:12px`;
+    btn.dataset.catid=c.id;
+    btn.onclick=()=>{ window._filterCat=c.id; renderBoard(); };
+    if((window._filterCat||"all")===c.id){ btn.style.borderColor=c.color||"#333"; btn.style.background=c.bg||"#eee"; btn.style.color=c.text||"#333"; btn.style.fontWeight="500"; }
+    catFilter.appendChild(btn);
+  });
+  el.appendChild(catFilter);
+
+  const stFilter=document.createElement("div"); stFilter.style.cssText="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center";
+  const stLbl=document.createElement("span"); stLbl.style.cssText="font-size:12px;color:#666"; stLbl.textContent="Status:"; stFilter.appendChild(stLbl);
+  [{id:"all",label:"All",color:"#333",bg:"#eee",text:"#333"},...STATUSES].forEach(s=>{
+    const btn=document.createElement("button"); btn.className="btn"; btn.textContent=s.label||"All";
+    btn.style.cssText="padding:4px 10px;border-radius:20px;font-size:12px";
+    btn.onclick=()=>{ window._filterStatus=s.id; renderBoard(); };
+    if((window._filterStatus||"all")===s.id){ btn.style.borderColor=s.color||"#333"; btn.style.background=s.bg||"#eee"; btn.style.color=s.text||"#333"; btn.style.fontWeight="500"; }
+    stFilter.appendChild(btn);
+  });
+  // Sort
+  const sortWrap=document.createElement("div"); sortWrap.style.cssText="margin-left:auto;display:flex;align-items:center;gap:6px";
+  const sortLbl=document.createElement("span"); sortLbl.style.cssText="font-size:12px;color:#666"; sortLbl.textContent="Sort:";
+  const sortSel=document.createElement("select"); sortSel.style.cssText="font-size:12px;padding:4px 8px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.2);background:#fff";
+  [["impact","Impact score"],["votes","Most CSM votes"],["recent","Most recent"]].forEach(([v,l])=>{ const o=document.createElement("option"); o.value=v; o.textContent=l; if(v===(window._sort||"impact"))o.selected=true; sortSel.appendChild(o); });
+  sortSel.onchange=e=>{ window._sort=e.target.value; renderBoard(); };
+  sortWrap.appendChild(sortLbl); sortWrap.appendChild(sortSel); stFilter.appendChild(sortWrap);
+  el.appendChild(stFilter);
+
+  // Cards
+  const fc=window._filterCat||"all"; const fs=window._filterStatus||"all"; const srt=window._sort||"impact";
+  let sorted=[...requests].filter(r=>(fc==="all"||r.category===fc)&&(fs==="all"||r.status===fs))
+    .sort((a,b)=>srt==="impact"?impactScore(b)-impactScore(a):srt==="votes"?totalVotes(b)-totalVotes(a):new Date(b.createdAt)-new Date(a.createdAt));
+
+  if(!sorted.length){ const e=document.createElement("div"); e.style.cssText="text-align:center;padding:3rem;color:#888;font-size:14px"; e.textContent="No requests yet. Hit + Submit request to add the first one."; el.appendChild(e); return; }
+
+  sorted.forEach((r,i)=>{
+    const c=cat(r.category); const st=statusObj(r.status);
+    const isExp=expanded===r.id; const vc=totalVotes(r); const cc=(r.customers||[]).length;
+
+    const card=document.createElement("div"); card.className="card";
+    const row=document.createElement("div"); row.style.cssText="display:flex;align-items:flex-start;gap:12px";
+
+    // Vote box
+    const vb=document.createElement("div"); vb.className="vote-box"+(vc>=3?" hot":"");
+    vb.innerHTML=`<svg width="14" height="14" viewBox="0 0 16 16"><path d="M8 3L14 11H2L8 3Z" fill="${vc>=3?"#7F77DD":"#999"}"/></svg><span style="font-size:15px;font-weight:500;color:${vc>=3?"#534AB7":"#1a1a18"};margin-top:2px">${vc}</span><span style="font-size:9px;color:#888;margin-top:1px">CSMs</span>`;
+    row.appendChild(vb);
+
+    const body=document.createElement("div"); body.style.cssText="flex:1;min-width:0";
+
+    // Title row
+    const titleRow=document.createElement("div"); titleRow.style.cssText="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;cursor:pointer";
+    titleRow.onclick=()=>{ expanded=isExp?null:r.id; renderBoard(); };
+    const titleSpan=document.createElement("span"); titleSpan.style.cssText="font-size:14px;font-weight:500"; titleSpan.textContent=r.title;
+    titleRow.appendChild(titleSpan);
+    if(i===0&&requests.length>1){ const badge=document.createElement("span"); badge.className="pill"; badge.style.cssText="background:#EEEDFE;color:#3C3489;font-weight:500"; badge.textContent=srt==="votes"?"Most voted":"Top impact"; titleRow.appendChild(badge); }
+    body.appendChild(titleRow);
+
+    // Meta
+    const meta=document.createElement("div"); meta.style.cssText="display:flex;gap:6px;align-items:center;flex-wrap:wrap;cursor:pointer";
+    meta.onclick=()=>{ expanded=isExp?null:r.id; renderBoard(); };
+    meta.appendChild(pill(c.label,c.bg,c.text)); meta.appendChild(pill(st.label,st.bg,st.text));
+    const metaText=document.createElement("span"); metaText.style.cssText="font-size:12px;color:#666";
+    metaText.textContent=`· ${r.submittedBy} · ${r.createdAt} · 👥 ${cc} customer${cc!==1?"s":""}${(r.comments||[]).length>0?" · 💬 "+(r.comments||[]).length:""} · score: ${impactScore(r)}`;
+    meta.appendChild(metaText); body.appendChild(meta);
+
+    if(isExp) {
+      const exp=document.createElement("div"); exp.style.marginTop="12px";
+
+      if(r.description){ const p=document.createElement("p"); p.style.cssText="font-size:13px;color:#555;margin:0 0 12px;line-height:1.6"; p.textContent=r.description; exp.appendChild(p); }
+
+      // CSM Votes section
+      const vsec=document.createElement("div"); vsec.style.marginBottom="12px";
+      const vlbl=document.createElement("div"); vlbl.style.cssText="font-size:11px;color:#aaa;margin-bottom:6px"; vlbl.textContent=`CSM votes (${vc})`;
+      const vchips=document.createElement("div"); vchips.style.cssText="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px";
+      (r.csmVotes||[]).forEach(v=>{ const s=document.createElement("span"); s.className="chip"; s.style.cssText="background:#EEEDFE;color:#3C3489;border:0.5px solid #AFA9EC"; s.textContent=v; vchips.appendChild(s); });
+      if(!vc){ const s=document.createElement("span"); s.style.cssText="font-size:12px;color:#aaa"; s.textContent="No votes yet."; vchips.appendChild(s); }
+      const vrow=document.createElement("div"); vrow.style.cssText="display:flex;gap:6px;align-items:center";
+      const vinp=document.createElement("input"); vinp.className="inp"; vinp.id="vote-inp-"+r.id; vinp.placeholder="Add your name to vote…"; vinp.style.cssText="flex:1;font-size:13px;padding:6px 10px";
+      vinp.onkeydown=e=>{ if(e.key==="Enter")addVote(r.id); };
+      const vbtn=document.createElement("button"); vbtn.className="btn btn-purple"; vbtn.style.cssText="font-size:12px;padding:6px 12px;white-space:nowrap"; vbtn.textContent="+ Add vote"; vbtn.onclick=()=>addVote(r.id);
+      vrow.appendChild(vinp); vrow.appendChild(vbtn);
+      vsec.appendChild(vlbl); vsec.appendChild(vchips); vsec.appendChild(vrow); exp.appendChild(vsec);
+
+      // Customers section
+      const csec=document.createElement("div"); csec.style.marginBottom="12px";
+      const clbl=document.createElement("div"); clbl.style.cssText="font-size:11px;color:#aaa;margin-bottom:6px"; clbl.textContent=`Affected customers (${cc})`;
+      const cchips=document.createElement("div"); cchips.style.cssText="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px";
+      (r.customers||[]).forEach(cu=>{ const s=document.createElement("span"); s.className="chip"; s.style.cssText="background:#E6F1FB;color:#0C447C;border:0.5px solid #B5D4F4"; s.textContent=cu; cchips.appendChild(s); });
+      if(!cc){ const s=document.createElement("span"); s.style.cssText="font-size:12px;color:#aaa"; s.textContent="No customers yet."; cchips.appendChild(s); }
+      const crow=document.createElement("div"); crow.style.cssText="display:flex;gap:6px;align-items:center";
+      const cinp=document.createElement("input"); cinp.className="inp"; cinp.id="cust-inp-"+r.id; cinp.placeholder="Add a customer name…"; cinp.style.cssText="flex:1;font-size:13px;padding:6px 10px";
+      cinp.onkeydown=e=>{ if(e.key==="Enter")addCustomer(r.id); };
+      const cbtn=document.createElement("button"); cbtn.className="btn btn-blue"; cbtn.style.cssText="font-size:12px;padding:6px 12px;white-space:nowrap"; cbtn.textContent="+ Add"; cbtn.onclick=()=>addCustomer(r.id);
+      crow.appendChild(cinp); crow.appendChild(cbtn);
+      csec.appendChild(clbl); csec.appendChild(cchips); csec.appendChild(crow); exp.appendChild(csec);
+
+      // Comments
+      if((r.comments||[]).length>0){
+        const cmSec=document.createElement("div"); cmSec.style.cssText="border-top:0.5px solid rgba(0,0,0,0.1);padding-top:10px;margin-bottom:10px";
+        const cmlbl=document.createElement("div"); cmlbl.style.cssText="font-size:11px;color:#aaa;margin-bottom:6px"; cmlbl.textContent="Comments";
+        cmSec.appendChild(cmlbl);
+        (r.comments||[]).forEach((cm,ci)=>{
+          const cmRow=document.createElement("div"); cmRow.style.cssText="margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px";
+          const cmBody=document.createElement("div"); cmBody.style.flex="1";
+          cmBody.innerHTML=`<span style="font-size:12px;font-weight:500">${cm.author}</span><span style="font-size:11px;color:#aaa;margin-left:6px">${cm.date}</span><p style="font-size:13px;color:#555;margin:3px 0 0;line-height:1.5">${cm.text}</p>`;
+          cmRow.appendChild(cmBody);
+          if(adminUnlocked){ const db=document.createElement("button"); db.className="btn"; db.style.cssText="font-size:11px;padding:2px 8px;border-color:#F09595;color:#A32D2D;flex-shrink:0;margin-top:2px"; db.textContent="✕"; db.onclick=()=>deleteComment(r.id,ci); cmRow.appendChild(db); }
+          cmSec.appendChild(cmRow);
+        });
+        exp.appendChild(cmSec);
+      }
+
+      // Action buttons
+      const acts=document.createElement("div"); acts.style.cssText="display:flex;gap:8px;margin-top:4px";
+      const addCmBtn=document.createElement("button"); addCmBtn.className="btn"; addCmBtn.style.cssText="font-size:12px;padding:4px 12px"; addCmBtn.textContent="+ Add comment"; addCmBtn.onclick=()=>openComment(r.id);
+      const editBtn=document.createElement("button"); editBtn.className="btn"; editBtn.style.cssText="font-size:12px;padding:4px 12px"; editBtn.textContent="✎ Edit"; editBtn.onclick=()=>openEdit(r.id);
+      acts.appendChild(addCmBtn); acts.appendChild(editBtn);
+      if(adminUnlocked){ const delBtn=document.createElement("button"); delBtn.className="btn"; delBtn.style.cssText="font-size:12px;padding:4px 12px;border-color:#F09595;color:#A32D2D"; delBtn.textContent="✕ Delete"; delBtn.onclick=()=>openDelete(r.id); acts.appendChild(delBtn); }
+      exp.appendChild(acts);
+      body.appendChild(exp);
+    }
+
+    const toggle=document.createElement("div"); toggle.style.cssText="font-size:11px;color:#aaa;flex-shrink:0;margin-top:2px;cursor:pointer"; toggle.textContent=isExp?"▲":"▼";
+    toggle.onclick=()=>{ expanded=isExp?null:r.id; renderBoard(); };
+    row.appendChild(body); row.appendChild(toggle); card.appendChild(row); el.appendChild(card);
+  });
+}
+
+// ── RENDER PM ─────────────────────────────────────────────
+function renderPM() {
+  const el=document.getElementById("view-pm"); el.innerHTML="";
+  const topBar=document.createElement("div"); topBar.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem";
+  const info=document.createElement("div"); info.style.cssText="font-size:14px;color:#666"; info.textContent="Impact score = CSM votes × total customers.";
+  const lockBtn=document.createElement("button"); lockBtn.className="btn"; lockBtn.style.fontSize="12px"; lockBtn.textContent="🔒 Lock"; lockBtn.onclick=()=>{ adminUnlocked=false; document.getElementById("pm-btn").textContent="PM / Admin 🔒"; showView("board"); };
+  topBar.appendChild(info); topBar.appendChild(lockBtn); el.appendChild(topBar);
+
+  const top3=[...requests].sort((a,b)=>impactScore(b)-impactScore(a)).slice(0,3);
+  const topGrid=document.createElement("div"); topGrid.className="g3"; topGrid.style.marginBottom="1.5rem";
+  top3.forEach((r,i)=>{
+    const c=cat(r.category); const st=statusObj(r.status);
+    const card=document.createElement("div"); card.style.cssText=`background:${i===0?"#EEEDFE":"#f5f5f3"};border:1px solid ${i===0?"#AFA9EC":"rgba(0,0,0,0.1)"};border-radius:12px;padding:14px`;
+    card.innerHTML=`<div style="font-size:11px;color:${i===0?"#534AB7":"#888"};font-weight:500;margin-bottom:6px">#${i+1}${i===0?" highest impact":""}</div><div style="font-size:13px;font-weight:500;margin-bottom:8px;line-height:1.4">${r.title}</div>`;
+    const pills=document.createElement("div"); pills.style.cssText="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px";
+    pills.appendChild(pill(c.label,c.bg,c.text)); pills.appendChild(pill(st.label,st.bg,st.text)); card.appendChild(pills);
+    const stats=document.createElement("div"); stats.style.cssText="display:flex;gap:12px";
+    [["CSM votes",totalVotes(r)],["customers",(r.customers||[]).length],["score",impactScore(r)]].forEach(([l,v])=>{
+      const d=document.createElement("div"); d.style.textAlign="center";
+      d.innerHTML=`<div style="font-size:18px;font-weight:500;color:${l==="score"?"#7F77DD":"#1a1a18"}">${v}</div><div style="font-size:11px;color:#888">${l}</div>`;
+      stats.appendChild(d);
+    });
+    card.appendChild(stats); topGrid.appendChild(card);
+  });
+  el.appendChild(topGrid);
+
+  const tableWrap=document.createElement("div"); tableWrap.style.cssText="background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;overflow:auto";
+  const tbl=document.createElement("table");
+  const thead=document.createElement("thead"); thead.innerHTML="<tr>"+["Title","Category","CSM Votes","Customers","Score","Status",""].map(h=>`<th>${h}</th>`).join("")+"</tr>"; tbl.appendChild(thead);
+  const tbody=document.createElement("tbody");
+  [...requests].sort((a,b)=>impactScore(b)-impactScore(a)).forEach((r,i)=>{
+    const c=cat(r.category); const st=statusObj(r.status);
+    const tr=document.createElement("tr"); tr.style.background=i%2===0?"transparent":"#fafafa";
+    tr.innerHTML=`<td style="max-width:220px">${r.title}</td><td><span class="pill" style="background:${c.bg};color:${c.text}">${c.label}</span></td><td style="text-align:center;font-weight:500">${totalVotes(r)}</td><td style="text-align:center">${(r.customers||[]).length}</td><td style="text-align:center;font-weight:500;color:#7F77DD">${impactScore(r)}</td>`;
+    // Status select
+    const stTd=document.createElement("td");
+    const sel=document.createElement("select"); sel.style.cssText=`font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid ${st.color};background:${st.bg};color:${st.text};cursor:pointer`;
+    STATUSES.forEach(s=>{ const o=document.createElement("option"); o.value=s.id; o.textContent=s.label; if(s.id===r.status)o.selected=true; sel.appendChild(o); });
+    sel.onchange=e=>{ r.status=e.target.value; saveRow(r); renderPM(); };
+    stTd.appendChild(sel); tr.appendChild(stTd);
+    // Actions
+    const actTd=document.createElement("td");
+    const editBtn=document.createElement("button"); editBtn.className="btn"; editBtn.style.cssText="font-size:12px;padding:3px 10px;margin-right:6px"; editBtn.textContent="Edit"; editBtn.onclick=()=>openEdit(r.id);
+    const delBtn=document.createElement("button"); delBtn.className="btn"; delBtn.style.cssText="font-size:12px;padding:3px 10px;border-color:#F09595;color:#A32D2D"; delBtn.textContent="Delete"; delBtn.onclick=()=>openDelete(r.id);
+    actTd.appendChild(editBtn); actTd.appendChild(delBtn); tr.appendChild(actTd);
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody); tableWrap.appendChild(tbl); el.appendChild(tableWrap);
+}
+
+// ── INIT ──────────────────────────────────────────────────
+window._filterCat="all"; window._filterStatus="all"; window._sort="impact";
+initSubmitForm();
+setExportMode("tsv");
+showView("board");
+loadAll();
+</script>
+</body>
+</html>
